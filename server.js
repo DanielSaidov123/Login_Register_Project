@@ -1,6 +1,7 @@
 import express from "express";
 import authentication from "./routes/Authentication.js"
 import posts from "./routes/Posts.js"
+import users from "./routes/Users.js"
 
 
 const app = express();
@@ -24,6 +25,8 @@ app.get("/", async (req, res) => {
 
 app.use("/", authentication);
 app.use("/posts", posts);
+app.use("/users", users);
+
 
  
 

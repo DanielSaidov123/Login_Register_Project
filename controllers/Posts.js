@@ -18,25 +18,96 @@ export const GetPosts = async (req, res) => {
 export const CreatePost = async (req, res) => {
   try {
     const user = await validateUser(req.body.username, req.body.password);
-    console.log(user.username);
 
     if (!user) {
-      res
-        .status(404)
-        .send({ err: "username or password is not goood. try again" });
+      return res
+        .status(401)
+        .send({ err: "username or password is not good. try again" });
     }
+
+    if (!req.body.title || !req.body.content) {
+      return res.status(400).send({ err: "missing title or content" });
+    }
+
     const postlist = await readPosts();
+
     const newpost = {
       id: getNextId(postlist),
-      title: req.bady.title,
-      content: req.bady.content,
+      title: req.body.title,
+      content: req.body.content,
       authorId: user.id,
       authorUsername: user.username,
     };
+
     postlist.push(newpost);
     await writePosts(postlist);
-    res.status(200).send(newpost);
+
+    res.status(201).send(newpost);
   } catch (err) {
-    res.status(404).send({ err });
+    res.status(500).send({ err: err.message });
   }
 };
+
+export const UpdetPost = async (req, res) => {
+  try {
+    const user = await validateUser(req.body.username, req.body.password);
+
+    if (!user) {
+      return res
+        .status(401)
+        .send({ err: "username or password is not good. try again" });
+    }
+
+    if (!req.body.title || !req.body.content) {
+      return res.status(400).send({ err: "missing title or content" });
+    }
+    const postlist = await readPosts();
+
+    const id = req.params.id;
+    const post = postlist.find((p) => p.id == id);
+
+    (post.title = req.body.title || post.title),
+      (post.content = req.body.content || post.content),
+    await writePosts(postlist);
+
+    res.status(201).send(postlist);
+  } catch (err) {
+    res.status(500).send({ err: err.message });
+  }
+};
+
+
+export const DeletePost = async (req, res) => {
+  try {
+    const user = await validateUser(req.body.username, req.body.password);
+
+    if (!user) {
+      return res
+        .status(401)
+        .send({ err: "username or password is not good. try again" });
+    }
+
+    const postlist = await readPosts();
+    const id = req.params.id;
+
+    const index = postlist.findIndex((p) => p.id == id);
+
+    if (index === -1) {
+      return res.status(404).send({ err: "post not found" });
+    }
+
+    const post = postlist[index];
+
+    if (post.authorId !== user.id) {
+      return res.status(403).send({ err: "not allowed to delete this post" });
+    }
+
+    postlist.splice(index, 1);
+    await writePosts(postlist);
+
+    res.status(200).send(post);  
+  } catch (err) {
+    res.status(500).send({ err: err.message });
+  }
+};
+
